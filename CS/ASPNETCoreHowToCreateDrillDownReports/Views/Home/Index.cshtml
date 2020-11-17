@@ -13,6 +13,8 @@
                 MasterID: e.GetBrickValue(),
             };
             reportPreview.drillThrough(JSON.stringify(navigateInfo));
+            //doesn't work?
+            //DocumentViewer.DrillThrough(JSON.stringify(navigateInfo));
             e.Handled = true;
         }
     }
