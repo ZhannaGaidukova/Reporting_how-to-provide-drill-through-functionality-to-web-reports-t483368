@@ -48,6 +48,8 @@ namespace ASPNETCoreHowToCreateDrillDownReports {
             });
             app.UseDevExpressControls();
 
+            if (!Directory.Exists(CustomReportProviderAsync.MyReportsDirectoryName))
+                Directory.CreateDirectory(CustomReportProviderAsync.MyReportsDirectoryName);
             foreach(var report in PredefinedReports.ReportsFactory.Reports) {
                 report.Value().SaveLayoutToXml(Path.Combine(env.ContentRootPath, CustomReportProviderAsync.MyReportsDirectoryName, report.Key + ".repx"));
             }
