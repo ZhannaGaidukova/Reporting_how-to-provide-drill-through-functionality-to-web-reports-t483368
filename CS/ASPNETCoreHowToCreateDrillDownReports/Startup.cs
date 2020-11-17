@@ -1,18 +1,16 @@
 using System;
 using System.IO;
+using ASPNETCoreHowToCreateDrillDownReports.Services;
 using DevExpress.AspNetCore;
 using DevExpress.AspNetCore.Reporting;
-using DevExpress.DataAccess.Excel;
-using DevExpress.DataAccess.Sql;
+using DevExpress.XtraReports.Services;
+using DevExpress.XtraReports.Web.WebDocumentViewer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using DevExpress.XtraReports.Web.Extensions;
-using DevExpress.XtraReports.Web.WebDocumentViewer;
-using DevExpress.XtraReports.Services;
 using ReportingAppAsyncServices.Services;
 
 namespace ASPNETCoreHowToCreateDrillDownReports {
@@ -30,17 +28,15 @@ namespace ASPNETCoreHowToCreateDrillDownReports {
                 .AddMvc()
                 .AddNewtonsoftJson()
                 .SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_3_0);
-         
-            services.AddScoped<IReportProviderAsync, CustomReportProviderAsync>();
-            services.AddScoped<IDrillThroughProcessorAsync, CustomDrillThroughProcessorAsync>();
 
             services.ConfigureReportingServices(configurator => {
-                
                 configurator.ConfigureWebDocumentViewer(viewerConfigurator => {
                     viewerConfigurator.UseCachedReportSourceBuilder();
                 });
                 configurator.UseAsyncEngine();
             });
+            services.AddScoped<IReportProviderAsync, CustomReportProviderAsync>();
+            services.AddScoped<IDrillThroughProcessorAsync, CustomDrillThroughProcessorAsync>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,6 +47,11 @@ namespace ASPNETCoreHowToCreateDrillDownReports {
                 reportingLogger.LogError(logMessage);
             });
             app.UseDevExpressControls();
+
+            foreach(var report in PredefinedReports.ReportsFactory.Reports) {
+                report.Value().SaveLayoutToXml(Path.Combine(env.ContentRootPath, CustomReportProviderAsync.MyReportsDirectoryName, report.Key + ".repx"));
+            }
+
             System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12;
             if(env.IsDevelopment()) {
                 app.UseDeveloperExceptionPage();
@@ -61,7 +62,7 @@ namespace ASPNETCoreHowToCreateDrillDownReports {
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            
+
             app.UseRouting();
 
             app.UseAuthorization();

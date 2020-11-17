@@ -1,33 +1,32 @@
-﻿using ASPNETCoreHowToCreateDrillDownReports;
-using DevExpress.XtraReports.Web.WebDocumentViewer;
+﻿using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using DevExpress.XtraReports.Services;
+using DevExpress.XtraReports.Web.WebDocumentViewer;
 
-namespace ReportingAppAsyncServices.Services {
-    public class NavigateInfo { 
+namespace ASPNETCoreHowToCreateDrillDownReports.Services {
+    public class NavigateInfo {
         public string NavigateTo { get; set; }
         public string MasterID { get; set; }
     }
     public class CustomDrillThroughProcessorAsync : IDrillThroughProcessorAsync {
-        public Task<DrillThroughResult> CreateReportAsync(DrillThroughContext context) {
-            var report = context.Report;
+        readonly IReportProviderAsync reportProviderAsync;
 
+        public CustomDrillThroughProcessorAsync(IReportProviderAsync reportProviderAsync) {
+            this.reportProviderAsync = reportProviderAsync;
+        }
+        public async Task<DrillThroughResult> CreateReportAsync(DrillThroughContext context) {
             NavigateInfo navigateInfo = JsonSerializer.Deserialize<NavigateInfo>(context.CustomData);
-            if (navigateInfo.NavigateTo == "back")
-                report = new MainReport();
-            else
-                if (navigateInfo.NavigateTo == "details") {
-                report = new Details();
+            var reportNameToOpen = navigateInfo.NavigateTo == "back" ? "MainReport"
+                : navigateInfo.NavigateTo == "details" ? "DetailReport1" : null;
+            var report = await reportProviderAsync.GetReportAsync(reportNameToOpen, null) ?? context.Report;
+
+            if(navigateInfo.NavigateTo == "details") {
                 int catID = 0;
-                string catName = "";
                 Int32.TryParse(navigateInfo.MasterID, out catID);
                 report.Parameters["categoryID"].Value = catID;
             }
-            return Task.FromResult(new DrillThroughResult(report));
+            return new DrillThroughResult(report);
         }
     }
 }

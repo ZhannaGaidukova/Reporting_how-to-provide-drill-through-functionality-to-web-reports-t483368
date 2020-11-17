@@ -1,41 +1,31 @@
-using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DevExpress.XtraReports.Services;
 using DevExpress.XtraReports.UI;
-using DevExpress.XtraReports.Web.Extensions;
-using ReportingAppAsyncServices.PredefinedReports;
+using Microsoft.AspNetCore.Hosting;
 
-namespace ReportingAppAsyncServices.Services
-{
-    public class CustomReportProviderAsync : IReportProviderAsync
-    {
-        readonly ReportStorageWebExtension reportStorageWebExtension;
+namespace ReportingAppAsyncServices.Services {
+    public class CustomReportProviderAsync : IReportProviderAsync {
+        public const string MyReportsDirectoryName = "Reports";
+        readonly IWebHostEnvironment env;
 
-        public CustomReportProviderAsync(ReportStorageWebExtension reportStorageWebExtension)
-        {
-            this.reportStorageWebExtension = reportStorageWebExtension;
+        public CustomReportProviderAsync(IWebHostEnvironment env) {
+            this.env = env;
         }
-        public async Task<XtraReport> GetReportAsync(string id, ReportProviderContext context)
-        {
-            byte[] reportLayout = await GetDataAsync(id);
-            if (reportLayout == null)
+        public async Task<XtraReport> GetReportAsync(string id, ReportProviderContext context) {
+            if(string.IsNullOrEmpty(id))
                 return null;
-            using (var ms = new MemoryStream(reportLayout))
-            {
-                var report = XtraReport.FromXmlStream(ms);
-                return report;
-            }
-        }
 
-        private Task<byte[]> GetDataAsync(string id) {
-            if (ReportsFactory.Reports.ContainsKey(id)) {
-                    using (MemoryStream ms = new MemoryStream()) {
-                        ReportsFactory.Reports[id]().SaveLayoutToXml(ms);
-                        return Task.FromResult(ms.ToArray());
-                    }
+            var reportDirectoryPath = Path.Combine(env.ContentRootPath, MyReportsDirectoryName);
+            var reportLaytoutFileInfo = new DirectoryInfo(reportDirectoryPath).GetFiles(id + ".repx", SearchOption.TopDirectoryOnly).SingleOrDefault();
+            if(reportLaytoutFileInfo == null)
+                return null;
+            var reportLayout = await File.ReadAllBytesAsync(reportLaytoutFileInfo.FullName);
+            using(var ms = new MemoryStream(reportLayout)) {
+                ms.Position = 0;
+                return XtraReport.FromXmlStream(ms);
             }
-            return null;
         }
     }
 }

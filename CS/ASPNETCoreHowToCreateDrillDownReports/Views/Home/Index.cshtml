@@ -5,23 +5,21 @@
 <script>
     function previewClick(s, e) {
         var brick = e.Brick;
-        if (brick && brick.navigation && brick.navigation.url && ["back", "details"].indexOf(brick.navigation.url) >= 0) {
-            var previewModel = s.GetPreviewModel();
-            var reportPreview = previewModel && previewModel.reportPreview;
+        var navigationUrl = brick && brick.navigation && brick.navigation.url;
+        if(navigationUrl && ["back", "details"].indexOf(navigationUrl) >= 0) {
+            var reportPreview = s.GetReportPreview();
             var navigateInfo = {
-                NavigateTo: brick.navigation.url,
+                NavigateTo: navigationUrl,
                 MasterID: e.GetBrickValue(),
             };
             reportPreview.drillThrough(JSON.stringify(navigateInfo));
-            //doesn't work?
-            //DocumentViewer.DrillThrough(JSON.stringify(navigateInfo));
             e.Handled = true;
         }
     }
 </script>
 @{
     var viewerRender = Html.DevExpress().WebDocumentViewer("DocumentViewer")
-        .Height("1000px")
+        .Height("800px")
         .ClientSideEvents(configure => configure.PreviewClick("previewClick"))
         .Bind(Model);
     @viewerRender.RenderHtml()
